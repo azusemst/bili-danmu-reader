@@ -2,6 +2,7 @@ import webbrowser
 import os
 import json
 import re
+import time
 
 
 def read_json(directory: str):
@@ -31,6 +32,49 @@ def read_json(directory: str):
         except json.JSONDecodeError:
             raise OSError("不合法的json文件")
 
+def parse_matsuri(data: object):
+    danmu_rows = ''
+    for i in data['full_comments']:
+        dm_time = i['time'] - data['info']['start_time']
+        text = ''
+        if 'superchat_price' in i.keys():
+            text = f"￥{i['superchat_price']} <b>{i['text']}</b>"
+        elif 'text' in i.keys():
+            if '点点红包抽礼物' in i['text']:
+                continue
+            text = i['text']
+        elif 'gift_name' in i.keys():
+            text = f"￥{i['gift_price']} <b>{i['gift_name']} * {i['gift_num']}</b>"
+        
+        danmu_rows += f'<tr><td>{time.strftime("%H:%M:%S", time.localtime(dm_time // 1000))}.{dm_time % 1000}</td><td><a target="_blank" href="https://space.bilibili.com/{i["user_id"]}">${i["username"]}</a></td><td>${text}</td></tr>'
+    
+    return f'''<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{time.strftime("%Y.%m.%d", time.localtime(data['info']['start_time']))}_直播弹幕文件</title>
+    <link rel="stylesheet" href="../table_style.css">
+</head>
+
+<body>
+
+    <p>开始时间：{time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(data['info']['start_time']))}</p>
+    <br><br>
+    <table>
+        <tr>
+            <th>时间</th>
+            <th>用户</th>
+            <th>内容</th>
+        </tr>
+        {danmu_rows}
+    </table>
+
+</body>
+
+</html>'''
+
 
 if __name__ == "__main__":
-    print(read_json(os.getcwd() + "/test_input"))
+    result = read_json(os.getcwd() + "/test_input")
+    if result['type'] == 'matsuri':
+        parse_matsuri(result['data'])
