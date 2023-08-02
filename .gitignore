@@ -1,3 +1,7 @@
 .vscode
 test.*
 to_html.js
+output
+reader.spec
+build
+dist
